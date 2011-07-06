@@ -1,0 +1,308 @@
+/*
+0PlayOr App
+author: John Warren at Digital Zebra Media
+email: jwarren@digizee.com
+website: http://digizee.com
+Description:  An application to enable use of the Blackberry Playbook to explain sports plays.
+
+Version: 0.6
+Initial release version for Appworld placeholder.  Basic functionality. Single layer, single bg image.  Use touchscreen to draw on defined canvas.
+Known issues; Exit function behaviour, bgImg on startup.
+
+Planned; overall look & feel, place characters/shapes, share (save,print, email,...), multiple layers, move status...
+tbd; alternate bg image, camera, ...
+
+with credit to BB sample SketchPad app for initial content
+*/
+
+var canvas = null;
+var ctx = null;
+var hdrHt = 30;
+var pnlSz;
+var lastX = -1;
+var lastY = -1;
+var startTime = null;
+var brushSize = 4;
+var fontSize = 12;
+var bgImg = new Image();
+var myAnswer;
+var modeIndex = 0;
+var colorIndex= 2;
+
+const modeArray = ["X", "O","-"];
+const colorArray = ["BLACK", "PURPLE", "BLUE", "DARKGREEN", "YELLOW", "ORANGE", "RED" ];
+var activeColor = colorArray[colorIndex];
+const btnArray = ["ClrSc", "BG", "X", "O", "Draw", "Colour", "Width", "Share", "Min","Help","Exit"];
+const descArray = ["Clear the Screen", "NYI: New Background Image", "Place X", "Place O", "Free Draw", "Change Color", "Change Width", "NYI: Share Image", "NYI:Minimize App", "NYI:Open Help", "Exit App"];
+var numButtonsInPanel = btnArray.length;
+
+function changeColor() { // change line and character colour
+	if(colorIndex<colorArray.length-1)
+		colorIndex = colorIndex+1;
+	else
+		colorIndex=0
+	activeColor = colorArray[colorIndex];
+	displayHeader("Drawing color is now "+colorArray[index]);
+}
+
+function drawPanel() { // draw the actions bar
+	for (var i=0; i<numButtonsInPanel; i++) {
+		ctx.fillStyle="Gainsboro"
+		ctx.fillRect(i*pnlSz+3, hdrHt, pnlSz-6, pnlSz/3-6);
+		ctx.fillStyle="black"
+		ctx.fillText(btnArray[i],i*pnlSz+10,hdrHt+5)
+	}
+}
+
+function displayHeader(msg) { // display te status message
+	ctx.clearRect(0, 0, canvas.width, hdrHt);
+
+	var font = '15pt Arial';
+	var fontpadding = 10;
+	if (window.blackberry != null) {
+		font = '8pt Arial';
+		fontpadding = 3;
+	}
+	ctx.fillStyle = '#000';
+	ctx.font = font;
+	ctx.textBaseline = 'top';
+	ctx.fillText(msg, fontpadding, fontpadding);
+}
+
+
+function drawPen(x, y) { // draw line in line mode
+	ctx.lineWidth = brushSize;
+	ctx.strokeStyle = activeColor;
+	ctx.beginPath();
+	ctx.moveTo(lastX, lastY);
+	ctx.lineTo(x, y);
+	ctx.stroke();
+}
+function drawChar(x,y,text){ // draw character
+	ctx.fillstyle=activeColor;
+	ctx.font = "Bold 16px Comic Sans";
+	ctx.fillText(text,x,y);
+}
+function drawWithEvent(x, y, eventName) { // drawing event handling
+	if (withinPanelBound(y)) {
+		lastX = -1;
+		lastY = -1;
+		return;
+	}
+	if (x || y) {
+		//Initialize cursor position if it hasn't been already:
+		if ((lastX == -1) || lastY == -1) {
+			lastX = x;
+			lastY = y;
+		}
+		displayHeader(eventName+" at " + x + ", " + y);
+		drawPen(x, y);
+		lastX = x;
+		lastY = y;
+	}
+}
+
+function withinPanelBound(y) { // if performing actions
+	return y < (hdrHt + pnlSz/3 + brushSize);
+}
+
+function clearCanvas() { // start with clear screen
+	ctx.clearRect(0, hdrHt+pnlSz/3, canvas.width, canvas.height - hdrHt);
+	ctx.drawImage(bgImg,0,hdrHt+pnlSz/3);
+	displayHeader("Canvas cleared");
+}
+
+function trapForApplicationExit(){ // manual exit handling
+	blackberry.app.event.onExit(handleExit);
+}
+function handleExit(){ // confirm exit action
+	myAnswer = confirm("Leave this application?");
+	if (myAnswer){
+		blackberry.app.exit();
+	}
+}
+
+function selectEvent(x, y) { // handle action bar
+	if (!withinPanelBound(y)){
+		return;
+	}
+
+	var eventIndex = parseInt(x/pnlSz);
+
+	var text = descArray[eventIndex];
+	displayHeader(text);
+
+	//const btnArray = ["ClrSc", "BG", "X", "O", "Line", "Colour", "Width", "Share", "Min","Help","Exit"];
+	switch(eventIndex){
+		case 0:		//Clear
+			clearCanvas();
+			break;
+		case 1:		//Change BG
+			break;
+		case 2:		//X
+			modeIndex=0;
+			break;
+		case 3:		//O
+			modeIndex=1;
+			break;
+		case 4:		//Line
+			modeIndex=2;
+			break;
+		case 5:		//colour
+			changeColor();
+			break;
+		case 6:		//Width
+			brushResize();
+			break;
+		case 7:		//Share
+			break;
+		case 8:		//Minimize
+			break;
+		case 9:		//Help
+			break;
+		case 10:	//Exit
+			handleExit()
+			break;
+	}
+
+}
+
+function showEventDescription(x, y) {
+	if (!withinPanelBound(y)){
+		return;
+	}
+
+	var eventIndex = parseInt(x/pnlSz);
+	var text = descArray[eventIndex];
+	displayHeader(text);
+}
+
+document.onmousedown = function(event) {
+	var x = event.clientX;
+	var y = event.clientY;
+
+	selectEvent(x, y);
+}
+document.ontouchstart = function(event) {
+	event.preventDefault();
+	var touchEvent = event.changedTouches[0];
+	var x = touchEvent.pageX;
+	var y = touchEvent.pageY;
+
+	if (x || y) {
+		if (withinPanelBound(y)) {
+			showEvent(x, y);
+		} else {
+			//Initialize the starting position:
+			if (modeIndex==2){
+				lastX = touchEvent.pageX;
+				lastY = touchEvent.pageY;
+			}
+			else{	// draw character
+				drawChar(x,y, modeArray[modeIndex]);
+			}
+		}
+	}
+}
+
+document.onmousemove = function(event) {
+	var x = event.clientX;
+	var y = event.clientY;
+	showEvent(x, y);
+	if (modeIndex==2){
+		drawWithEvent(x, y, "Pointer");
+	}
+	else{	// draw character
+		drawChar(x,y, ".");
+	}
+
+}
+
+document.ontouchmove = function(event) {
+	event.preventDefault();
+	var touchEvent = event.changedTouches[0];
+	var x = touchEvent.pageX;
+	var y = touchEvent.pageY;
+
+	if (modeIndex==2){
+		drawWithEvent(x, y, "TouchMove");
+	}
+	else{	// draw character
+		drawChar(x,y, ".");
+	}
+
+}
+
+document.onmouseup = function(event) {
+	var x = event.clientX;
+	var y = event.clientY;
+
+	if (modeIndex==2){
+		drawWithEvent(x, y, "Pointer");
+	}
+	else{	// draw character
+//		drawChar(x,y, modeArray[modeIndex]);
+	}
+}
+
+document.ontouchend = function(event) {
+	event.preventDefault();
+	var touchEvent = event.changedTouches[0];
+
+	if (withinPanelBound(touchEvent.pageY)) {
+		selectEvent(touchEvent.pageX, touchEvent.pageY);
+	} else {
+		if (touchEvent.pageX || touchEvent.pageY) {
+			displayHeader("TouchEnd at " + touchEvent.pageX + ", " + touchEvent.pageY);
+			if(modeIndex!=2){
+				drawChar(x,y, modeArray[modeIndex]);
+//				ctx.font="bold 20px Comic Sans";
+//				ctx.fillText
+			}
+		}
+
+	}
+}
+
+document.ontouchcancel = function(event) {
+	event.preventDefault();
+	var touchEvent = event.changedTouches[0];
+	if (touchEvent.pageX || touchEvent.pageY) {
+		displayHeader("TouchCancel at " + touchEvent.pageX + ", " + touchEvent.pageY);
+	}
+}
+
+function brushResize() {
+	if (brushSize < 10) {
+		brushSize = brushSize + 3;
+		fontSize = fontSize + 4;
+		displayHeader("Brush/font widened to " + brushSize+"/"+fontSize);
+	}
+	else {
+		brushSize = 1;
+		fontSize = 8;
+		displayHeader("Brush/font rolled to " + brushSize+"/"+fontSize);
+	}
+}
+
+function initPage() {
+
+	if (window.blackberry != null) {
+		hdrHt = 20;
+	}
+	bgImg.src="Media/intl-hockey.png"
+	//Create a canvas that covers the entire screen:
+    canvas = document.createElement('canvas');
+	document.getElementById('canvas').appendChild(canvas);
+	canvas.height = screen.availHeight;
+	canvas.width = screen.availWidth;
+	ctx = canvas.getContext("2d");
+	displayHeader("Touch the screen or move pointer to begin (Double tap screen to clear)");
+	pnlSz = canvas.width/numButtonsInPanel;
+
+	drawPanel();
+	bgImg.onload=function(){
+		ctx.drawImage(bgImg,0,hdrHt+pnlSz/3);
+	}
+
+}

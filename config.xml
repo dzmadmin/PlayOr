@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget xmlns		="http://ns.w3.org/ns/widgets"
+	xmlns:rim	="http://www.blackberry.com/ns/widgets"
+
+	version		="0.4.1">
+	<name short	="PlayOr">PlayOr</name>
+	<icon src	="Media/prx128.png"/>
+	<description> Application to allow presentation and discussion of sports plays</description>
+	<author href	="http://www.digizee.com"
+		email	="info@digizee.com">Digital Zebra Media</author>
+	<content src	="index.html"/>
+@media (min-width:480px) and (max-width:1024px) {
+body {
+font-family: Calibri;
+font-size: 2em;
+}
+}
+/* BlackBerry Torch 9800 */
+@media (max-width:360px) and (max height:480px) {
+(max width:360px)
+(max-height:480px)
+body {
+font-family: Verdana;
+font-size: 1em;
+}
+}
+	<license>
+		Copyright (c) 2011 Digital Zebra Media Inc.
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+		OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+		MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+		IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+		CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+		INSULT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+		SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	</license>
+
+</widget>
